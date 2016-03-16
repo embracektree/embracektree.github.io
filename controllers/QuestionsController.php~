@@ -1,0 +1,623 @@
+<?php
+
+namespace app\controllers;
+
+use app\models\QuestionsInfo;
+use Yii;
+use app\models\Questions;
+use app\models\QuestionsSearch;
+use yii\base\Exception;
+use yii\web\Controller;
+use yii\web\NotFoundHttpException;
+use yii\filters\AccessControl;
+use app\vendor\KTComponents\Admin;
+use yii\helpers\Url;
+use yii\helpers\BaseFileHelper;
+use app\models\TopicsInfo;
+use app\models\Topics;
+use app\models\Media;
+use app\vendor\sphinxlib\SphinxClient;
+
+
+/**
+ * QuestionsController implements the CRUD actions for Questions model.
+ */
+class QuestionsController extends Controller
+{
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['index', 'update', 'quick-create-topics', 'update-topic-content', 'update-node', 'move-image-to-folder', 'update-topic-sort-order','render-image-widget'],
+                'rules' => [
+                    [
+                        'actions' => ['index', 'update', 'quick-create-topics', 'update-topic-content', 'update-node', 'move-image-to-folder', 'update-topic-sort-order','render-image-widget'],
+                        'allow' => true,
+                        'roles' => ['admin'], //will be accesseble only for admin role which we set while saving user in the auth table not based on the role which we saved in the user table kt173
+                    ],
+                    [
+                        'actions' => ['get-doc-info'],
+                        'allow' => true,
+                    ],
+
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Lists all Questions models.
+     * @return mixed
+     */
+    public function actionIndex()
+    {
+        $searchModel = new QuestionsSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $dataProvider->pagination->pageSize = Admin::PAGINATION_LIMIT;
+
+        return $this->render('index', [
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
+        ]);
+    }
+
+    /**
+     * Displays a single Questions model.
+     * @param integer $id
+     * @return mixed
+     */
+    public function actionView($id)
+    {
+        return $this->render('view', [
+            'model' => $this->findModel($id),
+        ]);
+    }
+
+
+    /**
+     * Updates an existing Questions model.
+     * If update is successful, the browser will be redirected to the 'view' page.
+     * @param integer $id
+     * @return mixed
+     */
+    public function actionUpdate($topic_id, $language)
+    {
+
+        $model = self::getLanguageBasedTopic($topic_id, $language);
+        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            return $this->redirect(['index']);
+        } else {
+            return $this->render('update', [
+                'model' => $model,
+            ]);
+        }
+    }
+
+    /**
+     * Deletes an existing Questions model.
+     * If deletion is successful, the browser will be redirected to the 'index' page.
+     * @param integer $id language
+     * @return mixed
+     */
+    public function actionDelete($topic_id, $language)
+    {
+        $model = $this->findModel($topic_id);
+        $infoModel = self::getLanguageBasedTopicInfo($topic_id, $language);
+
+        //$model->topic_status = Admin::RECORD_DELETE;
+
+       // $model->save(false);
+
+        if ($infoModel) {
+            $infoModel->scenario = 'quick_create';
+            $infoModel->topic_status = Admin::RECORD_DELETE;;
+            if($infoModel->save()){
+                QuestionsInfo::updateAll(['topic_status' => Admin::RECORD_DELETE], 'parent_topic_id = '.$topic_id.' AND language = '."'$languae'");
+            }
+
+            $modelQuestionModel = QuestionsInfo::find()->where(['topic_id' => $topic_id])->andWhere(['!=', 'topic_status', Admin::RECORD_DELETE])->one();
+            if(empty($modelQuestionModel)){
+                $model->topic_status_final = Admin::RECORD_DELETE;
+                $model->save();
+            }
+            //QuestionsInfo::find()->where()[]
+        }
+
+        $key = Yii::t('app', Admin::TOPICS_CACHE_KEY) . '_' .$infoModel->language . '_' . $model->course->course_id;
+        Admin::clearCache($key);
+
+        $key = Yii::t('app', Admin::TOPICS_CACHE_KEY) . '_' .Yii::$app->language . '_' . $model->course->course_id;
+        Admin::clearCache($key);
+
+        $key = Yii::t('app', Admin::TOP_QUESTIONS) . '_' . $language . '_' . $model->course->course_id;
+        Admin::clearCache($key);
+
+
+        Yii::$app->session->setFlash('success', 'Record\'s Deleted Successfully ');
+        return $this->redirect(['index']);
+    }
+
+    /*Function which returns the Questions model based on the language*/
+    public function getLanguageBasedTopic($id, $language = null)
+    {
+        $model = Questions::find()->where(['topic_id' => $id, 'language' => $language])->one();
+
+        if ($model == null)
+            throw new NotFoundHttpException('The requested page does not exist.');
+        else
+            return $model;
+    }
+
+    public function getLanguageBasedTopicInfo($id, $language = null)
+    {
+        $model = QuestionsInfo::find()->where(['topic_id' => $id, 'language' => $language])->andWhere(['!=', 'topic_status', Admin::RECORD_DELETE])->one();
+
+        if ($model == null)
+            throw new NotFoundHttpException('The requested page does not exist.');
+        else
+            return $model;
+    }
+
+    /**
+     * Finds the Questions model based on its primary key value.
+     * If the model is not found, a 404 HTTP exception will be thrown.
+     * @param integer $id
+     * @return Questions the loaded model
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    protected function findModel($id)
+    {
+        if (($model = Questions::findOne($id)) !== null) {
+            return $model;
+        } else {
+            throw new NotFoundHttpException('The requested page does not exist.');
+        }
+    }
+
+    public function actionQuickCreateTopics()
+    {
+        if (Yii::$app->request->isAjax) {
+            $postedData = Yii::$app->request->post();
+            if ($postedData) {
+
+                $model = new Questions();
+                $topicInfoModel = new QuestionsInfo();
+
+                $selectedTopicId = $postedData['selectedTopicId'];
+                $action = $postedData['action'];
+                $model->parent_topic_id = $selectedTopicId;
+
+                if($action == Questions::SIBLING){
+                    $siblingModel  = Questions::findOne($selectedTopicId);
+                    $model->parent_topic_id = $siblingModel->parent_topic_id;
+                }
+
+                $model->course_id = $postedData['courseId'];
+               // $model->topic_status = Admin::DRAFT_VALUE;
+                $model->topic_name = 'Question Name' . time();
+
+                $lastRecordWithParent = Admin::getSortOrderValue($model, 'parent_topic_id', 'course_id');
+                $sortOrder = ($lastRecordWithParent) ? $lastRecordWithParent->sort_order + 1 : 1;
+                $model->sort_order = $sortOrder;
+
+                $topicInfoModel->scenario = 'quick_create';
+                $topicInfoModel->topic_name = $model->topic_name;
+                $topicInfoModel->parent_topic_id = $model->parent_topic_id;
+                $topicInfoModel->sort_order = $model->sort_order;
+                $topicInfoModel->course_id = $model->course_id;
+                $topicInfoModel->language = Yii::$app->language ? Yii::$app->language : Yii::t('app', Admin::DEFAULT_LANGUAGE);
+                $topicInfoModel->topic_description = '';
+                $topicInfoModel->topic_status = Admin::DRAFT_VALUE;
+
+                if ($model->save()) {
+                    $topicInfoModel->topic_id = $model->topic_id;
+                    $topicInfoModel->save();
+
+                   $language = Yii::$app->language;
+                    $key = Yii::t('app', ADMIN::TOPICS_CACHE_KEY) . '_' . $language . '_' . $model->course_id;
+                    Admin::clearCache($key);
+
+                    $return['status'] = true;
+
+                    $return['message'] = $topicInfoModel->attributes;
+                    $return['courseName'] = $model->course->coursesInfo[0]->slug;
+                } else {
+                    $return['status'] = false;
+                    $return['message'] = $model->getErrors();
+                }
+            } else {
+                $return['status'] = false;
+                $return['message'] = Yii::t('','Please post the data');
+            }
+        } else {
+            $return['status'] = false;
+            $return['message'] = Yii::t('','Method allows only Ajax Request');
+        }
+        echo json_encode($return);
+    }
+
+   public function actionUpdateTopicContent()
+    {
+
+        try {
+            if (Yii::$app->request->isAjax) {
+                $postedData = Yii::$app->request->post();
+                if ($postedData) {
+
+                    $topicId = $postedData['topicId'];
+                    $topicTitle = $postedData['topicTitle'];
+                    $language = $postedData['topicLanguage'];
+                    $topicStatus = $postedData['topicStatus'];
+                    $courseTitle = $postedData['courseTitle'];
+
+                    $model = Questions::findOne($topicId);
+
+                    $courseModel = $model->course;
+                    $courseInfoModel = $model->course->coursesInfo[0];
+
+
+                    //$mainModel->course_status = $model->course_status;
+
+                    $languageSelected = Yii::$app->language;
+
+                    if ($languageSelected == Admin::DEFAULT_LANGUAGE) {
+                         $courseModel->course_name = $courseTitle;
+                    }
+                    $courseInfoModel->course_name = $courseTitle;
+                    if ($courseModel->save() && $courseInfoModel->save()) {
+
+                          $infoModel = self::getLanguageBasedTopicInfo($topicId, $language);
+
+                            if ($model && $infoModel) {
+                                $infoModel->scenario = 'quick_create';
+                                $infoModel->topic_description = $postedData['content'];
+                                $model->topic_name = $topicTitle;
+                                $infoModel->topic_name = $topicTitle;
+                                $infoModel->topic_status = $topicStatus;
+
+                                if ($model->save()) {
+
+                                    $infoModel->save();
+
+                                    $language = Yii::$app->language;
+                                    $key = Yii::t('app', ADMIN::TOPICS_CACHE_KEY) . '_' . $language . '_' . $model->course_id;
+                                    Admin::clearCache($key);
+
+                                    $language = Yii::$app->language;
+                                    $key = Yii::t('app', Admin::TOP_QUESTIONS) . '_' . $language . '_' . $model->course_id;
+                                    Admin::clearCache($key);
+
+                                    $return['status'] = true;
+                                    $return['message'] = $model->attributes;
+                                    $return['courseName'] = $model->course->coursesInfo[0]->slug;
+                                    $return['selectedLanguage'] = Yii::$app->language;
+                                } else {
+                                    $return['status'] = false;
+                                    $return['message'] = Yii::t('app', 'Topic Name is unique for each level');
+                                }
+                            } else {
+                                $return['status'] = false;
+                                $return['message'] = Yii::t('app', 'Selected Topic not exists');
+                            }
+                      }else{
+                        $return['status'] = false;
+                        $return['message'] = Yii::t('app', 'Error while saving Topic name');
+                    }
+                } else {
+                    $return['status'] = false;
+                    $return['message'] = Yii::t('app', 'Please post the data');
+                }
+            } else {
+                $return['status'] = false;
+                $return['message'] = Yii::t('app', 'Method allows only Ajax Request');
+            }
+        } catch (Exception $e) {
+            $return['status'] = false;
+            $return['message'] = $e->getMessage();
+        }
+        echo json_encode($return);
+    }
+
+    /*Function to update the sort order and parent id of the move node kt173*/
+    public function actionUpdateNode()
+    {
+        try {
+            if (Yii::$app->request->isAjax) {
+                $postedData = Yii::$app->request->post();
+
+                if ($postedData) {
+                    $draggedNodeId = $postedData['draggedNodeId'];
+                    $droppedOnNodeId = $postedData['droppedOnNodeId'];
+                    $draggedScenario = $postedData['draggedScenario'];
+                   // $language = $postedData['language'];
+                    $droppedOnModel = Questions::findOne($droppedOnNodeId);
+                    $draggedModel = Questions::findOne($draggedNodeId);
+                    switch ($draggedScenario) {
+                        case Questions::DRAGGED_BEFORE:
+                        case Questions::DRAGGED_AFTER:
+                            if ($droppedOnModel->parent_topic_id != $draggedModel->parent_topic_id && ($draggedScenario == Questions::DRAGGED_AFTER)) {
+
+                                $allChildTopics = Questions::find()
+                                    ->andWhere(['parent_topic_id' => $droppedOnModel->parent_topic_id, 'course_id' => $droppedOnModel->course_id])
+                                    ->orderBy('sort_order DESC')
+                                    ->one();
+                                if ($allChildTopics) {
+                                    $draggedModel->sort_order = $allChildTopics->sort_order + 1;
+
+                                } else {
+                                    $draggedModel->sort_order = 1;
+                                }
+
+                                $draggedModel->parent_topic_id = $droppedOnModel->parent_topic_id;
+
+                                $topicUpdateStatus = true;
+
+                                if (!$draggedModel->save()) {
+                                    $topicUpdateStatus = false;
+                                }
+                            } else {
+
+                                $draggedModel->parent_topic_id = $droppedOnModel->parent_topic_id;
+                                $draggedModel->sort_order = $droppedOnModel->sort_order;
+
+                                if ($draggedModel->save()) {
+
+                                    $sortCompareSymbol = ($draggedScenario == Questions::DRAGGED_BEFORE) ? '>' : '<';
+                                    $sortOrder = ($draggedScenario == Questions::DRAGGED_BEFORE) ? 'ASC' : 'DESC';
+
+                                    $allTopicOfParent = Questions::find()
+                                        ->where(['parent_topic_id' => $droppedOnModel->parent_topic_id, 'course_id' => $droppedOnModel->course_id])
+                                        ->andWhere(['!=', 'topic_id', $draggedModel->topic_id])
+                                        ->andWhere([$sortCompareSymbol, 'sort_order', $draggedModel->sort_order])
+                                        ->orWhere(['=', 'topic_id', $droppedOnModel->topic_id])
+                                        ->orderBy('sort_order ' . $sortOrder)
+                                        ->all();
+
+                                    if ($allTopicOfParent) {
+                                        $i = $draggedModel->sort_order;
+                                        foreach ($allTopicOfParent as $child) {
+
+                                            $child->sort_order = ($draggedScenario == Questions::DRAGGED_BEFORE) ? $i + 1 : $i - 1;
+                                            $child->save();
+
+                                            ($draggedScenario == Questions::DRAGGED_BEFORE) ? $i++ : $i--;
+                                        }
+                                    }
+                                    $topicUpdateStatus = true;
+                                } else {
+
+
+                                    $topicUpdateStatus = false;
+                                }
+                            }
+                            break;
+
+                        case Questions::DRAGGED_OVER:
+
+                            $allChildTopics = Questions::find()
+                                ->where(['parent_topic_id' => $droppedOnNodeId, 'course_id' => $droppedOnModel->course_id])
+                                ->orderBy('sort_order DESC')
+                                ->one();
+
+                            if ($allChildTopics) {
+                                $draggedModel->sort_order = $allChildTopics->sort_order + 1;
+                            } else {
+                                $draggedModel->sort_order = 1;
+                            }
+                            $draggedModel->parent_topic_id = $droppedOnNodeId;
+
+                            $topicUpdateStatus = true;
+
+                            if (!$draggedModel->save()) {
+
+                                $topicUpdateStatus = false;
+
+                            }
+                            break;
+                    }
+                    if ($topicUpdateStatus) {
+                        $return['status'] = true;
+                        $return['message'] = Yii::t('app', 'Successfully updated');
+                    } else {
+                        $return['status'] = false;
+                        $return['message'] = Yii::t('app', 'updation Failed');
+                    }
+
+                    $language = Yii::$app->language;
+                    $key = Yii::t('app', ADMIN::TOPICS_CACHE_KEY) . '_' . $language . '_' . $droppedOnModel->course_id;
+                    Admin::clearCache($key);
+                }
+
+            } else {
+                $return['status'] = false;
+                $return['message'] = Yii::t('app', 'Method allows only Ajax Request');
+            }
+        } catch (Exception $e) {
+            $return['status'] = false;
+            $return['message'] = $e->getMessage();
+        }
+
+        echo json_encode($return);
+    }
+
+    public function actionMoveImageToFolder()
+    {
+
+        try{
+            if($_POST['url']){
+                $url=$_POST['url'];
+                $contents=file_get_contents($url);
+                $save_path=Yii::$app->params['uploadPath'].'/' . Yii::t('app', Questions::TEMP_FOLDER) . '/';
+                if(BaseFileHelper::createDirectory($save_path)){
+                    $imageName = explode('/',$url);
+                    $name = $imageName[count($imageName)-1];
+                    $save_path = $save_path.$name;
+                    if(file_put_contents($save_path,$contents)){
+                        $return['imagePath'] = Url::base(true) . '/upload/' . Yii::t('app', Questions::TEMP_FOLDER) . '/' . $name;
+                        $return['status']=true;
+                    }else{
+                        $return['status'] =false;
+                        $return['message'] ='Image not moved to specified folder';
+                }
+                }
+            }else{
+                $return['status'] =false;
+                $return['message'] ='Please provide url';
+
+            }
+
+        }catch (Exception $e){
+            $return['status'] =false;
+            $return['message'] =$e->getMessage();
+        }
+
+        echo json_encode($return);
+
+        /*if (isset($_FILES['file']) && !$_FILES['file']['error']) {
+            $uploadDirectory = Yii::$app->params['uploadPath'] . '/' . Yii::t('app', Questions::TEMP_FOLDER) . '/';
+            BaseFileHelper::createDirectory($uploadDirectory);
+
+            $response = move_uploaded_file($_FILES['file']['tmp_name'], $uploadDirectory . time().$_FILES['file']['name']);
+            $return['status'] = $response;
+            $return['imagePath'] = Url::base(true) . '/upload/' . Yii::t('app', Questions::TEMP_FOLDER) . '/' . time().$_FILES['file']['name'];
+        } else {
+            $return['status'] = false;
+        }*/
+       
+    }
+
+    public function actionRenderImageWidget(){
+        return $this->renderAjax('image_widget');
+    }
+/*
+ * SELECT questions.topic_id as TOPIC_ID , topicsinfo.course_status as COURSE_STATUS,questionsinfo.topic_status as TOPIC_STATUS,questions.slug as TOPIC_SLUG,questionsinfo.topic_description as TOPIC_DESCRIPTION,questionsinfo.topic_name as TOPIC_NAME,topics.slug as COURSE_SLUG,topicsinfo.course_name as COURSE_NAME,topicsinfo.course_description as COURSE_DESCRIPTION FROM `knx_questions_info` `questionsinfo` INNER JOIN `knx_questions` `questions` ON questions.topic_id = questionsinfo.topic_id INNER JOIN `knx_topics` `topics` ON questions.course_id = topics.course_id INNER JOIN `knx_topics_info` `topicsinfo` ON topicsinfo.course_id =  topics.course_id and topicsinfo.course_status != 2 and questionsinfo.topic_status != 2
+ * */
+    public function actionGetDocInfo($searchString = null)
+    {
+
+        if (Yii::$app->request->isAjax || true) {
+            try {
+                $adminSettingsInfo = Yii::$app->getSettings();
+
+                switch ($adminSettingsInfo['enable_sphnix_search']) {
+
+                     case true:
+
+                        $statusArray = (Yii::$app->user->isGuest) ? [Admin::ACTIVE] : [Admin::DRAFT_VALUE, Admin::ACTIVE];
+
+                        $s = new SphinxClient();
+                        $s->open();
+                        $s->setServer("localhost", 9312);
+                        $s->setMatchMode(SPH_MATCH_ANY);
+                        /*
+                         *
+                        SPH_MATCH_ALL
+                        SPH_MATCH_ANY
+                        SPH_MATCH_PHRASE
+                        SPH_MATCH_BOOLEAN
+                        SPH_MATCH_EXTENDED
+                        SPH_MATCH_EXTENDED2
+                        */
+                        //$s->setRankingMode(SPH_RANK_NONE);
+                        /*
+                                            SPH_RANK_PROXIMITY_BM25
+                                            SPH_RANK_BM25
+                                            SPH_RANK_NONE
+                                            */
+                        $s->setMaxQueryTime(0);
+                        $searchResult = $s->query($searchString);
+                        $response = [];
+
+                        if ($searchResult) {
+                            foreach ($searchResult['matches'] as $match) {
+                                $matchesInfo = $match['attrs'];
+                                $course_status = $matchesInfo['course_status'];
+                                $topic_status = $matchesInfo['topic_status'];
+                                $language = $matchesInfo['language'];
+
+                                $statusArray = (Yii::$app->user->isGuest) ? [Admin::ACTIVE] : [Admin::DRAFT_VALUE, Admin::ACTIVE];
+                                $languageOption = [Yii::$app->language,Admin::DEFAULT_LANGUAGE];
+
+                                if (in_array($course_status, $statusArray) && in_array($topic_status, $statusArray)  && in_array($language,$languageOption)) {
+                                    if($language == Yii::$app->language && !in_array($matchesInfo['topic_id'],$topicIds)){
+                                        $topicIds[]=$matchesInfo['topic_id'];
+                                        $totalList[$matchesInfo['topic_id']]=$matchesInfo['topic_id'];
+                                    }else if(!in_array($matchesInfo['topic_id'],$topicIds)){
+                                        $totalList[$matchesInfo['topic_id']]=$matchesInfo['topic_id'];
+                                    }
+                                    $topicListInfo['course_slug']=$matchesInfo['course_slug'];
+                                    $topicListInfo['topicId']=$matchesInfo['topic_id'];
+                                    $topicListInfo['topic_name']=$matchesInfo['topic_name'];
+                                    $topicListInfo['topic_slug']=$matchesInfo['topic_slug'];
+                                    $totalList[$matchesInfo['topic_id']]=$topicListInfo;
+                                }
+                            }
+                            foreach($totalList as $key=>$value){
+                                $url = Url::toRoute(['topics/get-topics-info', 'courseslug' => $value['course_slug'], 'id' => $key, 'slug' => $value['topic_slug']]);
+                                $response[] = ['value' => $value['topic_name'], 'url' => $url];
+                            }
+                        } else {
+
+                            $response[] = ['value' => 'Sphinx Connection Failed. Error Description : ' . $s->getLastError()];
+                        }
+                        break;
+
+                    case false:
+                        $courseMainTableName = Topics::tableName();
+                        $courseInfoTableName = TopicsInfo::tableName();
+                        $topicMainTableName = Questions::tableName();
+                        $topicInfoTableName = QuestionsInfo::tableName();
+
+                        $status = (Yii::$app->user->id && Yii::$app->user->id == Admin::ADMIN_USER_ID) ? Admin::RECORD_DELETE : Admin::ACTIVE;
+                        $whereCondition = (Yii::$app->user->id && Yii::$app->user->id == Admin::ADMIN_USER_ID) ? '!=' : '=';
+
+                        $query = new \yii\db\Query;
+                        $query->select('course.slug as COURSE_SLUG,topic.topic_id as TOPIC_ID,topic.slug as TOPIC_SLUG,topicinfo.topic_description as DESCRIPTION,topicinfo.topic_name as TOPIC_NAME')
+                            ->from($topicInfoTableName . ' topicinfo')
+                            ->innerJoin($topicMainTableName . ' topic', 'topic.topic_id = topicinfo.topic_id')
+                            ->innerJoin($courseMainTableName . ' course', 'topic.course_id = course.course_id')
+                            ->innerJoin($courseInfoTableName . ' courseinfo', 'courseinfo.course_id =  course.course_id')
+                            ->orFilterWhere(['like', 'topicinfo.topic_description', $searchString])
+                            ->orFilterWhere(['like', 'topicinfo.topic_name', $searchString])
+                            ->orFilterWhere(['like', 'topic.slug', $searchString])
+                            ->orFilterWhere(['like', 'courseinfo.course_description', $searchString])
+                            ->orFilterWhere(['like', 'courseinfo.course_name', $searchString])
+                            ->orFilterWhere(['like', 'course.slug', $searchString])
+                            ->andWhere([$whereCondition, 'courseinfo.course_status', $status])
+                            ->andWhere([$whereCondition, 'topicinfo.topic_status', $status])
+                            ->andWhere('IF(topicinfo.language = "' . Yii::$app->language . '",topicinfo.language = "' . Yii::$app->language . '",topicinfo.language = "EN")')
+                            ->groupBy('topicinfo.topic_name');
+
+                        $command = $query->createCommand();
+                        $queryResult = $command->queryAll();
+                        $response = [];
+
+                        foreach ($queryResult as $data) {
+
+                            $url = Url::toRoute(['topics/get-topics-info', 'courseslug' => $data['COURSE_SLUG'], 'id' => $data['TOPIC_ID'], 'slug' => $data['TOPIC_SLUG']]);
+                            $model = Questions::findOne($data['TOPIC_ID']);
+                            $parentTopicStatus = true;
+                            if($model->parent_topic_id !=0 && Yii::$app->user->isGuest){
+                                $parentRelation = $model->questionParentRelation;
+                                $parentTopicStatus = $parentRelation->topicsInfos[0]->topic_status;
+
+                              }
+
+                            if($parentTopicStatus){
+                                $response[] = ['value' => $data['TOPIC_NAME'], 'url' => $url];
+                            }
+
+                        }
+                        break;
+                }
+            } catch (Exception $e) {
+                $response[] = ['value' => $e->getMessage()];
+            }
+        } else {
+            $response[] = ['value' => 'Request is not allowed'];
+        }
+        echo json_encode($response);
+    }
+
+}
