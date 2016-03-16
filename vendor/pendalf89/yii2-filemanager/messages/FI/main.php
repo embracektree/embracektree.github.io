@@ -1,0 +1,35 @@
+<?php
+
+return [
+    'Title' => 'otsikko',
+    'Type' => 'tyyppi',
+    'Url' => 'url',
+    'Alt' => 'alt',
+    'Description' => 'kuvaus',
+    'Thumbnails' => 'pikkukuvat',
+    'Save' => 'Tallenna',
+    'Delete' => 'poistaa',
+    'Created' => 'Luotu',
+    'Updated' => 'Päivitetty',
+    'Insert' => 'Insert',
+    'Original' => 'alkuperäinen',
+    'Settings' => 'Asetukset',
+    'File manager' => 'Tiedostonhallinta',
+    'File manager module' => 'Tiedostonhallinta moduuli',
+    'Files' => 'tiedostot',
+    'Thumbnails settings' => 'pikkukuvat asetukset',
+    'Now using next thumbnails presets' => 'Nyt pikkukuvien avulla ensi esiasetuksia',
+    'If you change the thumbnails sizes, it is strongly recommended to make resize all thumbnails.' => 'Jos muutat pikkukuvat kokoa, se on erittäin suositeltavaa tehdä kaikki pikkukuvat kokoa',
+    'Do resize thumbnails' => 'Älä kokoa pikkukuvia',
+    'Thumbnails sizes has been resized successfully!' => 'Pikkukuvat koot kokoa on muutettu onnistuneesti!',
+    'Do not forget every time you change thumbnails presets to make them resize.' => 'Muista aina vaihtaa esiasetuksia tehdä niistä pikkukuvat kokoa.',
+    'Upload manager' => 'Lataa manager',
+    'Back to file manager' => 'Takaisin tiedostonhallinta',
+    'Alt attribute' => 'alt määrite',
+    'Changes not saved.' => 'Muutoksia ei tallennettu',
+    'Changes saved!' => 'Muutokset tallennettu!',
+    'Select image size' => 'Valitse kuvakoko',
+    'Are you sure you want to delete this image?' => 'Oletko varma, että haluat poistaa tämän kuvan ?',
+
+
+];
