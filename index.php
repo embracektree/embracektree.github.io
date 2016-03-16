@@ -9,5 +9,5 @@ require(__DIR__ . '/vendor/yiisoft/yii2/Yii.php');
 require(__DIR__ . '/vendor/KTComponents/KTApplication.php');
 
 $config = require(__DIR__ . '/config/web.php');
-
+echo "test";die;
 (new app\vendor\KTComponents\KTApplication($config))->run();
