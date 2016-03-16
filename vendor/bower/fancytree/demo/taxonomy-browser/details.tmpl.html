@@ -1,0 +1,71 @@
+<h3>
+	{{#if vernacularName}} {{vernacularName}} {{else}} {{canonicalName}} {{/if}}
+	{{#if isExtinct}} † {{/if}}
+	<small>{{rank}}</small>
+</h3>
+<!--
+<h4>Taxonomy and Nomenclature</h4>
+ -->
+<dl>
+	<dt>Scientific Name</dt>
+		<dd>{{scientificName}}</dd>
+	<dt>Vernacular Name</dt>
+		<dd>{{vernacularName}}</dd>
+	<dt>Canonical Name</dt>
+		<dd>{{canonicalName}}</dd>
+<!-- 	<dt>Nub</dt>
+		<dd>{{nubKey}}</dd> -->
+	<dt>Key</dt>
+		<dd>{{key}}, Nub: {{nubKey}}</dd>
+<!-- 	<dt>Kingdom</dt>
+		<dd>{{kingdom}}</dd>
+	<dt>Taxonomic Rank</dt>
+		<dd>{{rank}}</dd>
+ -->
+	<dt>Synonym(s)</dt>
+		<dd>
+			<ul>
+				{{#each synonymList.synonyms}}
+				<li>
+					{{#if this}} {{this.sciName}} {{else}} n.a. {{/if}}
+				</li>
+				{{/each}}
+			</ul>
+		</dd>
+	<dt>Common Name(s)</dt>
+		<dd>
+			<ul>
+				{{#each commonNameList.commonNames}}
+				<li>
+					{{#if this}} {{this.commonName}} {{else}} n.a. {{/if}}
+				</li>
+				{{/each}}
+			</ul>
+		</dd>
+	<dt>Description(s)</dt>
+		<dd>
+			<ul>
+				{{#each descriptions}}
+				<li>
+					{{this.description}}
+				</li>
+				{{/each}}
+			</ul>
+		</dd>
+
+<!-- 	<dt>Valid Name</dt>
+		<dd>todo</dd>
+ -->
+</dl>
+<small>
+GBIF Secretariat: GBIF Backbone Taxonomy,
+Accessed via <a href="http://www.gbif.org/dataset/{{datasetKey}}">http://www.gbif.org/dataset/{{datasetKey}}</a> on {{_now}}
+<p>
+Open <a href="http://www.gbif.org/species/{{key}}"target="_blank">Authorative Information on GBIF</a>.
+</p>
+</small>
+<!--
+<div class="body">
+	{{body}}
+</div>
+ -->
