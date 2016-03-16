@@ -1,0 +1,23 @@
+<?php
+
+namespace app\modules\adminSettingsConfig;
+
+/**
+ * Class AdminSettingsModule
+ * @package app\modules\adminSettingsConfig
+ */
+class AdminSettingsModule extends \yii\base\Module
+{
+    public $controllerNamespace = 'app\modules\adminSettingsConfig\controllers';
+    public $defaultRoute = 'adminindex';//setting default controller
+
+    /**
+     * Init function to initialisation
+     */
+    public function init()
+    {
+        parent::init();
+
+        // custom initialization code goes here
+    }
+}

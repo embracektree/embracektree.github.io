@@ -1,0 +1,36 @@
+<?php
+
+namespace app\modules\adminSettingsConfig\controllers;
+
+use Yii;
+use yii\web\Controller;
+
+/**
+ * AdminSettingsConfigController implements the CRUD actions for AdminSettingsConfig model.
+ */
+class TestController extends Controller
+{
+
+    public function behaviors() //Authentication of the users
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'only' => ['index', 'adminindex'],
+                'rules' => [
+                    [
+                        'actions' => ['index', 'adminindex'],
+                        'allow' => true,
+                        'roles' => ['admin'], //will be accesseble only for admin role which we set while saving user in the auth table not based on the role which we saved in the user table
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    public function actionIndex()
+    {
+        echo 'rendered';die;
+    }
+
+}
