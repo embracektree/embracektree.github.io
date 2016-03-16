@@ -1,0 +1,67 @@
+{
+    "name": "KtreeOpenSource/KTreeFAQ",
+    "description": "KTreeFAQ Application",
+    "keywords": ["KTreeFAQ", "FAQ"],
+    "homepage": "",
+    "type": "application",
+    "license": "MPL 2.0",
+    "authors": [
+        {
+            "name":  "KTree",
+            "email": "itsupport@ktree.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.4.0",
+        "yiisoft/yii2": ">=2.0.5",
+        "yiisoft/yii2-bootstrap": "*",
+        "yiisoft/yii2-swiftmailer": "*",
+        "kartik-v/yii2-widget-typeahead": "*",
+        "kartik-v/yii2-tabs-x": "dev-master",
+        "kartik-v/yii2-widgets": "*",
+        "kartik-v/yii2-mpdf": "dev-master",
+        "kartik-v/yii2-widget-fileinput": "@dev",
+        "kartik-v/bootstrap-fileinput": "@dev",
+        "kartik-v/yii2-widget-select2": "@dev",
+        "kartik-v/yii2-editable": "@dev",
+        "kartik-v/yii2-grid": "@dev",
+        "wbraganca/yii2-fancytree-widget": "*",
+        "yiisoft/yii2-jui": "~2.0.0",
+        "yiisoft/yii2-apidoc": "~2.0.0",
+        "cebe/markdown": "~1.0.1"
+
+    },
+    "require-dev": {
+        "yiisoft/yii2-codeception": "*",
+        "yiisoft/yii2-debug": "*",
+        "yiisoft/yii2-gii": "*",
+        "yiisoft/yii2-faker": "*"
+     },
+    "config": {
+        "process-timeout": 1800
+    },
+    "scripts": {
+        "post-create-project-cmd": [
+            "yii\\composer\\Installer::postCreateProject"
+        ]
+    },
+    "extra": {
+        "yii\\composer\\Installer::postCreateProject": {
+            "setPermission": [
+                {
+                    "runtime": "0777",
+                    "web/assets": "0777",
+                    "yii": "0755"
+                }
+            ],
+            "generateCookieValidationKey": [
+                "config/web.php"
+            ]
+        },
+        "asset-installer-paths": {
+            "npm-asset-library": "vendor/npm",
+            "bower-asset-library": "vendor/bower"
+        }
+    }
+}
