@@ -1,0 +1,168 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: satish.banda
+ * Date: 28/12/15
+ * Time: 12:03 PM
+ */
+use yii\helpers\Url;
+use app\vendor\KTComponents\widgets\TopicsTree;
+use yii\bootstrap\Modal;
+use app\models\Topics;
+use \yii\helpers\Html;
+use yii\web\JsExpression;
+use wbraganca\fancytree\FancytreeWidget;
+use app\vendor\KTComponents\Admin;
+
+?>
+
+<div class="span10 col-xs-6 col-sm-3 courses-left-content">
+
+    <section class="sidebar">
+
+        <?php
+
+        if (Yii::$app->user->id == Admin::ADMIN_USER_ID) {
+
+            echo '<div class="topic-sidebar">';
+
+            if (!Yii::$app->user->isGuest && !$previewParameter) {
+                echo '<div class="topics_buttons_list">';
+                echo '<div class="topics-creation">';?>
+
+                <div class="btn-group">
+                    <button class="btn btn-info" type="button">Create Topic</button>
+                    <button data-toggle="dropdown" class="btn btn-info dropdown-toggle" type="button"
+                            aria-expanded="true">
+                        <span class="caret"></span>
+                        <span class="sr-only">Toggle Dropdown</span>
+                    </button>
+                    <ul role="menu" class="dropdown-menu">
+                        <li><a href='javascript:void(0);' onclick="createSibling()">Sibling</a></li>
+                        <li><a href='javascript:void(0);' onclick="createChild()">Child</a></li>
+                    </ul>
+                </div>
+
+                <?php
+
+                //echo Html::button('<i class="fa fa-plus"> Create Topics </i>', ['class' => 'btn btn-sm btn-primary quick_create_topic', 'id' => 'create_topics']);
+                echo Html::hiddenInput('courseIdHidden', $courseId, ['class' => 'selectedCourseId']);
+                echo Html::hiddenInput('treeSelectedTopicId', '', ['class' => 'selectedTopicId', 'id' => 'treeSelectedTopicId']);
+
+                echo '</div>';
+
+                ?>
+                <div class="preview-content">
+                    <?= Html::button('Preview', ['class' => 'btn btn-sm btn-primary preview_topics', 'id' => 'preview_topics_content']); ?>
+                </div>
+		<div class='save-buttons'>
+
+			<?php  $statusList = json_decode(Admin::getStatusList(), true); ?>
+		    	<?= 'Status'. Html::dropDownList('status',$infoModel['topic_status'],$statusList,['class'=>'form-control topic_status_change']); ?>
+ 			<?= Html::button('Save  Topic',['class'=>'btn btn-sm btn-primary save_topic_content','disabled'=>'disabled']); ?>
+		</div>
+
+                <?php echo '</div>';
+
+            }
+
+            $data = Admin::getTopicsMenu($courseId, $courseSlug, $previewParameter);
+
+            echo FancytreeWidget::widget([
+                'options' => [
+                    // 'id'=>'topic_tree',
+                    'source' => $data,
+
+                    'toggleExpanded' => true,
+                    'lazyLoad' => true,
+
+                    'nodeSetExpanded' => true,
+                    'extensions' => ['dnd'],
+                    'dnd' => [
+                        'preventVoidMoves' => true,
+                        'preventRecursiveMoves' => true,
+                        'autoExpandMS' => 400,
+
+                        /* 'expandAll' => true,
+                         'toggleExpanded' => true,
+                         'setExpanded' => true,
+                         'setSelected' => true,
+                         'nodeSetExpanded' => true,*/
+                        'lazyLoad' => true,
+
+
+                        'dragStart' => new JsExpression('function(node, data) {
+				                if(node.data.preview == "true")
+                                    return false;
+                                else
+                                    return true;
+		        	         }'),
+                        'dragEnter' => new JsExpression('function(node, data) {
+                                if(node.data.preview == "true")
+                                    return false;
+                                else
+                                    return true;
+                            }'),
+                        'dragDrop' => new JsExpression('function(node, data) {
+
+                                var dataVariable = data;
+                                var nodeVariable = node;
+                                var draggedNodeId = data.otherNode.data.id;
+                                var droppedOnNodeId = data.node.data.id;
+                                var draggedScenario = data.hitMode;
+                                var language = node.data.language;
+                                    console.log(data);
+                                if(draggedNodeId && droppedOnNodeId ){
+
+                                $.ajax({
+                                    type: "POST",
+                                    url: ajaxUrl + "topics/update-node",
+                                    data: {"draggedNodeId": draggedNodeId, "droppedOnNodeId":droppedOnNodeId,"draggedScenario":draggedScenario,"language":language},
+                                    success: function (data) {
+
+                                        var response = $.parseJSON(data)
+
+                                        if(!response.status){
+                                               alert("Topic name is unique for each level.");
+                                        }else
+                                            {
+                                                dataVariable.otherNode.moveTo(nodeVariable, dataVariable.hitMode);
+                                            }
+                                        }
+                                    });
+                                }
+                            }'),
+                    ],
+                    'dblclick' => new JsExpression('function(node, data){ // On click topic load\'s the selected topic
+                           var node = data.node;
+                           orgEvent = data.originalEvent;
+                        if(node.isActive() && node.data.url){
+                              window.location.href = node.data.url;
+                        }
+
+                    }'),
+                    'activate' => new JsExpression('function(node, data) {
+                    selectedNode= data.node.key
+                                $("#treeSelectedTopicId").val("");
+                                $("#treeSelectedTopicId").val(data.node.key);
+                                console.log("key   "+data.node.key);
+                    }'),
+                ]
+            ]);
+            echo '</div>';
+        } else if (Yii::$app->user->isGuest) {
+            ?>
+            <?=
+            TopicsTree::widget(
+                [
+                    'title' => $model->course_name,
+                    'course_id' => $courseId,
+                    'course_slug' => $courseSlug,
+                ]
+            ) ?>
+        <?php } ?>
+
+    </section>
+</div>
+
+

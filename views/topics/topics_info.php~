@@ -1,0 +1,70 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: satish.banda
+ * Date: 28/12/15
+ * Time: 11:29 AM
+ */
+
+use yii\widgets\ListView;
+use yii\helpers\Url;
+use app\vendor\KTComponents\Admin;
+use Yii\helpers\Html;
+
+
+?>
+
+<div class="container-fluid courses-div">
+    <div class="row-fluid">
+        <?php $this->beginBlock('topiclist'); ?>
+        <?php echo $this->render('topics_list', ['model'=>$model->course->coursesInfo,'courseId' => $model->course->course_id,'courseSlug'=>$model->course->coursesInfo->slug,'infoModel'=>$infoModel,'previewParameter'=>$previewParameter]) ?>
+        <?php $this->endBlock(); ?>
+        <div class="span10 col-lg-10 col-sm-8 courses-right-content" >
+
+            <div class="contentSaveResponse"></div>
+
+            <div class="heading">
+
+                <div class="editable_div"> <h3><?= $model['topic_name'] ?></h3></div>
+
+                <?= Html::hiddenInput('topicId',$model['topic_id'],['class'=>'topic_id_hidden']); ?>
+                <?= Html::hiddenInput('parentIds',$parentIds,['class'=>'parent_topic_ids']); ?>
+                <?= Html::hiddenInput('firstNode',$firstNode,['class'=>'firstNodeId']); ?>
+                <?= Html::hiddenInput('topicLanguage',$infoModel['language'],['class'=>'topic_language_hidden']); ?>
+
+                <?php if(!Yii::$app->user->isGuest &&  !$previewParameter){ ?>
+                    <i class="glyphicon glyphicon-pencil update_topic"></i>
+
+                    <div class="topic_error_desc help-block"></div>
+
+                    <div class="save-topic-description">
+                        <div class="topic-status">
+
+                        <?php
+                             $statusList = json_decode(Admin::getStatusList(), true);
+                        ?>
+                        <?= 'Status'. Html::dropDownList('status',$infoModel['topic_status'],$statusList,['class'=>'form-control topic_status_change','label'=>'test']); ?>
+                        </div>
+                        <?= Html::button('Save  Topic',['class'=>'btn btn-sm btn-primary save_topic_content','disabled'=>'disabled']); ?>
+
+                    </div>
+
+                <?php } ?>
+
+            </div>
+
+            <div class="topic-desc content-description">
+                <div class="<?= (!Yii::$app->user->isGuest && !$previewParameter)?'editor':'';?>" >
+                    <!-- <div class="wid-block">
+                         <div class="wid-contain">-->
+                    <?= $infoModel['topic_description'] ?>
+                    <!--</div>
+                </div>-->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

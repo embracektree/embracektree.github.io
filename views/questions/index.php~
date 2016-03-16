@@ -1,0 +1,117 @@
+<?php
+
+use yii\helpers\Html;
+use app\vendor\KTComponents\Admin;
+use \kartik\grid\GridView;
+use yii\helpers\Url;
+use app\models\Questions;
+
+/* @var $this yii\web\View */
+/* @var $searchModel app\models\TopicsSearch */
+/* @var $dataProvider yii\data\ActiveDataProvider */
+
+$this->title = Yii::t('app', 'Topics');
+$this->params['breadcrumbs'][] = $this->title;
+?>
+<div class="topics-index">
+
+    <h1><?= Html::encode($this->title) ?></h1>
+
+
+    <?php
+
+    $statusList = json_decode(Admin::getStatusList(), true);
+    $languageList = json_decode(Admin::getLanguagesList(), true);
+    //$languageList = [Yii::$app->language];
+    $coursesList = json_decode(Admin::getCourses(), true);
+
+    ?>
+
+    <?php
+
+    $gridColumns = [
+        //['class' => 'kartik\grid\SerialColumn'],
+        [
+            'attribute'=>'course_id',
+            'label'=>Yii::t('app','Course Name'),
+            'value'=>function ($data)  {
+                    return $data->course->coursesInfo[0]->course_name;
+                },
+            'filterType'=>GridView::FILTER_SELECT2,
+            'filter'=>$coursesList,
+            'filterWidgetOptions'=>[
+                'pluginOptions'=>['allowClear'=>true],
+            ],
+            'filterInputOptions'=>['placeholder'=>Yii::t('app','Course Name')],
+            //'group'=>true,  // enable grouping
+        ],
+
+          [
+            'attribute'=>'topic_name',
+            'width'=>'310px',
+             'value'=>function($data){
+                     return $data->topicsInfos[0]->topic_name;
+                 }
+           ],
+
+        [
+            'attribute'=>'language',
+            'label'=>Yii::t('app','Language'),
+            'value'=>function ($data){
+                    $languagesInfo = Questions::getLanguagesInfo($data->topic_id);
+                    return $languagesInfo;
+                },
+            'filterType'=>'',
+            'filter'=>'',
+            'filterWidgetOptions'=>[
+                'pluginOptions'=>['allowClear'=>true,'multiple'=>true],
+            ],
+            'filterInputOptions'=>['placeholder'=>Yii::t('app','Languages')],
+            //'group'=>true,  // enable grouping
+            //'subGroupOf'=>1
+        ],
+        [
+            'attribute'=>'topicStatus',
+            'label'=>Yii::t('app','Topic Status'),
+            'value'=>function ($data) use ($statusList) {
+                    return $statusList[$data->topicsInfos[0]->topic_status];
+                },
+            'filterType'=>GridView::FILTER_SELECT2,
+            'filter'=>$statusList,
+            'filterWidgetOptions'=>[
+                'pluginOptions'=>['allowClear'=>true],
+            ],
+            'filterInputOptions'=>['placeholder'=>Yii::t('app','Status')],
+           // 'group'=>true,  // enable grouping
+        ],
+
+
+        ['class' => 'kartik\grid\ActionColumn',
+            'template'=>'{update}{delete}',
+            'urlCreator' => function ($action, $model, $key, $index) {
+                    if ($action === 'update') {
+                        $url = Url::toRoute(['topics/get-topics-info','courseslug' => $model->course->slug,  'id' => $model->topic_id, 'slug' => $model->slug]);
+                        return $url;
+                    }
+                    if ($action === 'delete') {
+                        $url = Url::toRoute(['questions/delete','topic_id' => $model->topic_id, 'language' => $model->topicsInfos[0]->language]);
+                        return $url;
+                    }
+                }
+        ]
+    ];
+    echo GridView::widget([
+        'dataProvider'=>$dataProvider,
+        'filterModel'=>$searchModel,
+        'showPageSummary'=>true,
+        'pjax'=>true,
+       // 'striped'=>true,
+        'hover'=>true,
+        'panel'=>['type'=>'primary', 'heading'=>Yii::t('app','Questions List')],
+        'columns'=>$gridColumns
+
+    ]);
+
+    ?>
+
+</div>
