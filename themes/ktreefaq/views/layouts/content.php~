@@ -1,0 +1,41 @@
+<?php
+use yii\widgets\Breadcrumbs;
+use app\vendor\KTComponents\Alert;
+
+?>
+
+<div class="content-wrapper">
+    <?php
+    if ($this->title !== null) {
+        echo '<section class="content-header">';
+        echo '<h1>' . \yii\helpers\Html::encode($this->title) . '</h1>';
+
+
+        echo Breadcrumbs::widget(
+            [
+                'links' => isset($this->params['breadcrumbs']) ? $this->params['breadcrumbs'] : [],
+            ]
+        );
+        echo '</section>';
+
+    }
+    ?>
+
+    <section class="content">
+        <?= Alert::widget() ?>
+        <?= $content ?>
+    </section>
+</div>
+
+<footer class="main-footer">
+    <div class="pull-right hidden-xs">
+        <b>Version</b> 0.1
+    </div>
+    <strong>Copyright &copy; <?= date('Y')-1 ?>-<?= date('Y') ?> <a href="http://ktree.com"><?php echo $adminSettings['site_name'];?></a>.</strong> All rights
+    reserved.
+</footer>
+<span class="back-to-top"></span>
+
+
+<!-- Add the sidebar's background. This div must be placed
+     immediately after the control sidebar -->

@@ -1,0 +1,310 @@
+body{padding: 0px; margin: 0px}
+/*
+h2,h3,h4,h5,h6,h1{margin: 5px;}
+*/
+
+.cursor {
+    cursor: move;
+}
+
+.read-out {
+    margin-top: 30px;
+}
+
+.dragging {
+    margin: -1px;
+    border: 1px dashed #ccc;
+}
+
+.drop-area {
+    width: 100%;
+    min-height: 200px;padding-bottom: 150px;
+}
+.left {
+    float: left;
+    width: 200px;
+    padding-top: 100px;
+    height: calc(100% - 100px);
+    background-color: #eee;
+}
+.toolKit {
+    background-color: #000000;
+    height: 100%;
+    list-style: outside none none;
+    margin: 0;
+    padding: 50px 0 0;
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 65px;
+    z-index: 9;
+}
+.wid-block .options-panel.image-options a {
+    width: 59px;
+}
+.toolKit li {
+    background-color: #222;
+    border-top: 1px solid #ccc;
+    color: #fff;
+    cursor: move;
+    font-size: 12px;
+    height: 50px;
+    line-height: 10px;
+    padding-top: 6px;
+    text-align: center;
+    width: 100%;
+}
+.toolKit li h5 {
+    margin: 5px;
+    text-align: center;
+}
+.editor {
+    height: 100%;
+    overflow: auto;
+    margin-right: 50px;
+}
+
+.editor-inner{float: left;width: 100%;  }
+
+/* Widgets*/
+/* Text widget */
+.editor .contenteditor{
+
+}
+.editor .elements{padding:5px;outline: none;margin: 5px 0px ;}
+.editor .editor.contenteditor {
+    border: dashed #fff 1px;
+    margin-bottom:5px;
+
+}
+.editor  .elements, .editor .elements:focus {
+    border: dashed #ddd 1px;
+}
+.editor .no-text{
+
+}
+[contentEditable=true]:focus{
+    border: dotted 1px #ccc;outline: none;
+}
+
+.ui-state-highlight{min-height: 50px; border: dotted 1px #ccc;}
+.widget{position: relative;}
+.widget span.move {
+    display: none;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    background-color: #eee;
+    padding: 2px;
+    color: #888;
+    text-align: center;
+    border-radius: 3px;
+    opacity: 0.6;
+    cursor: move;
+}
+.widget span.move:hover {
+    opacity: 1;
+}
+
+.widget:hover span.move,.widget:focus span.move{display: block}
+
+/* Options */
+.wid-block {
+    position: relative; padding-left:55px ;
+}
+.wid-block div.settings-handles{
+    position: absolute;
+    left: 1px;
+    display: none;
+}
+.wid-block:hover div.settings-handles{
+    display: block;
+
+}
+.wid-block .settings-handles a.options-handler {
+    background-color: #fafafa;
+    top: 0px;
+    margin-right: 2px;
+    padding: 2px;
+}
+.wid-block:hover  div.settings-handles {
+    display: block;
+}
+
+.wid-block .options-panel{
+    position: relative;
+    display: none;
+}
+.wid-block .options-panel {
+    position: absolute;
+    left: 55px;
+    top: 0px;
+    background-color: #fff;
+    padding: 5px;z-index: 1;
+}
+.wid-block .options-panel h5 {
+    font-weight: bold;
+    margin: 5px 0px;
+    border-bottom: solid 1px #eee;
+    padding: 5px 0px;
+    clear: both;
+}
+.wid-block:hover .options-panel {
+    background-color: #fff;z-index: 1;
+}
+.wid-block .options-panel a {
+    text-transform: uppercase;
+    float: left;
+    width: 25px;
+    color: #222;
+    text-decoration: none;
+    border-right: solid 1px #e1e1e1;
+    text-align: center;
+    font-size: 12px;
+    background-color: #eee;
+}
+.wid-block .options-panel a.close-pane {
+    position: absolute;
+    right: 0px;
+}
+.wid-block .options-panel a.active {
+    background: #fff;
+}
+
+/* Table Options Override */
+table.style-one *{
+
+}
+.rowhandler {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    display: none;
+}
+/*kt168 on28/1/16*/
+.update_topic {
+    left: 10px;
+    position: absolute;
+    top: 26px;
+}
+.editable_div {
+    background-color: #fff;
+    margin-right: 50px;
+    padding: 5px;
+}
+.topics-creation .dropdown-menu a {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+.topics-creation .dropdown-menu {
+    min-width: 100%;
+}
+.topic-sidebar {
+    background-color: #ffffff;
+    height: 100%;
+    z-index: 99;
+}
+.sidebar {
+    height: 100%;
+    padding-bottom: 0;
+    z-index: 99;
+}
+.main-footer {
+    background: none repeat scroll 0 0 #ffffff;
+    border-top: 1px solid #d2d6de;
+    color: #444444;
+    padding: 15px;
+    position: relative;
+    z-index: 999;
+}
+.container-fluid {
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+.courses-left-content{
+    overflow: unset;
+    top:50px;
+}
+.main-sidebar,.wrapper{
+    background-color: #fff !important;
+}
+.sidebar_left .ui-draggable-handle {
+    position: relative;
+}
+.main-sidebar.sidebar_left {
+    float: left;
+    min-height: auto;
+    padding-top: 0;
+    position: relative;
+}
+/*ends*/
+.wid-block .options-panel.text-options {
+    position: static;
+    width: auto;  padding: 2px;
+}
+.wid-block .options-panel.text-options a{  width: auto;}
+.wid-block .options-panel.text-options li {
+    margin: 2px;
+}
+.wid-block .media-upload,.wid-block .embed-upload {
+    width: 200px;
+    margin: 20px auto;
+}
+
+table.elements .ui-resizable-handle.ui-resizable-e {
+    position: absolute;
+    width: 10px;
+    height: 20px;
+    right: -5px;
+    background: #ddd;cursor: col-resize;
+    top: 0px;
+}
+table.elements .ui-resizable-handle.ui-resizable-e:after{
+    content: "::";
+}
+table.elements th.ui-resizable{
+    position: relative;
+}
+.content-header.content-search-header {
+    background: none repeat scroll 0 0 rgba(0, 0, 0, 0.2) !important;
+    padding: 15px !important;
+}
+.tt-menu .tt-suggestion{
+	cursor: pointer !important;
+}
+.tt-menu .tt-suggestion.tt-cursor, .tt-menu .tt-suggestion.tt-selectable:hover {
+    background-color: rgba(0, 0, 0, 0.2) !important;
+    color: #262626;
+    cursor: default;
+    outline: 0 none;
+    text-decoration: none;
+}
+.tt-menu .tt-suggestion{
+padding:3px 10px !important;}
+.menu-responsive-icon {
+    color: #ffffff;
+    float: left;
+    font-size: 25px !important;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 0 !important;
+    padding-top: 10px;
+    cursor:pointer;
+}
+
+.template-upload .name {
+    width: 130px;
+}
+.name {
+    width: 150px !important;
+    word-wrap: break-word;
+}
+.filemanager-modal .modal-dialog{
+	margin-top:0px;
+	margin-bottom:0px;
+}
+[role="filemanager-frame"]{
+	height:500px !important;
+} 

@@ -1,0 +1,159 @@
+body{padding: 0px; margin: 0px}
+/*
+h2,h3,h4,h5,h6,h1{margin: 5px;}
+*/
+
+.cursor {
+    cursor: move;
+}
+
+.read-out {
+    margin-top: 30px;
+}
+
+.dragging {
+    margin: -1px;
+    border: 1px dashed #ccc;
+}
+
+.drop-area {
+    width: 100%;
+    min-height: 200px;padding-bottom: 150px;
+}
+.left {
+    float: left;
+    width: 200px;
+    padding-top: 100px;
+    height: calc(100% - 100px);
+    background-color: #eee;
+}
+.toolKit {
+    width: 65px;
+    padding: 50px 0px 0px 0px;
+    height: calc(100% - 50px);
+    background-color: #000;
+    position: fixed;
+    right: 0px;
+    top: 0px;
+    margin: 0px;
+    list-style: none;
+}
+.toolKit li {
+    background-color: #222;
+    border-top: 1px solid #ccc;
+    color: #fff;
+    cursor: move;
+    font-size: 12px;
+    height: 50px;
+    line-height: 10px;
+    padding-top: 6px;
+    text-align: center;
+    width: 100%;
+}
+.toolKit li h5 {
+    margin: 5px;
+    text-align: center;
+}
+.editor {
+    height: 100%;
+    overflow: auto;
+    padding-left:20px ;
+}
+
+.editor-inner{float: left;width: 100%;  }
+
+/* Widgets*/
+/* Text widget */
+.editor .contenteditor{
+
+}
+.editor .elements{padding:5px;outline: none;margin: 5px 0px ;}
+.editor .editor.contenteditor {
+    border: dashed #fff 1px;
+    margin-bottom:5px;
+
+}
+.editor  .elements, .editor .elements:focus {
+    border: dashed #ddd 1px;
+}
+.editor .no-text{
+    color: #ccc;
+
+}
+[contentEditable=true]:focus{
+    border: dotted 1px #ccc;outline: none;
+}
+
+.ui-state-highlight{min-height: 50px; border: dotted 1px #ccc;}
+.widget{position: relative;}
+.widget span.move {
+    display: none;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    background-color: #eee;
+    padding: 2px;
+    color: #888;
+    text-align: center;
+    border-radius: 3px;
+    opacity: 0.6;
+    cursor: move;
+}
+.widget span.move:hover {
+    opacity: 1;
+}
+
+.widget:hover span.move,.widget:focus span.move{display: block}
+
+/* Options */
+.wid-block {
+    position: relative;
+}
+.wid-block  a.drag-handler {
+    position: absolute;
+    left: -14px;
+    background-color: #ccc;
+    top: 0px;
+    cursor: move;
+    display: none;
+}
+.wid-block:hover  a.drag-handler {
+    display: block;
+}
+
+.wid-block .options-panel{
+    position: relative;
+    display: none;
+}
+.wid-block .options-panel{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+}
+.wid-block:hover .options-panel {
+    display: block;
+
+    background-color: #fff;
+}
+.wid-block .options-panel a {
+    text-transform: uppercase;
+    float: left;
+    width: 25px;
+    color: #222;
+    text-decoration: none;
+    border-right: solid 1px #e1e1e1;
+    text-align: center;
+    font-size: 12px;
+    background-color: #eee;
+}
+.wid-block:hover .options-panel a.active {
+    background: #fff;
+}
+
+/* Table Options Override */
+.table-options{
+    display: block !important;
+    position: static !important;
+    text-align: right;
+    padding: 2px;
+}

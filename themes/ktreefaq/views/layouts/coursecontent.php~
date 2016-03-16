@@ -1,0 +1,39 @@
+<?php
+use yii\widgets\Breadcrumbs;
+use app\vendor\KTComponents\Alert;
+
+?>
+<div class="content-wrapper two-column">
+
+    <?php
+        if ($this->title !== null) {
+            echo '<section class="content-header">';
+            echo '<h1>' . \yii\helpers\Html::encode($this->title) . '</h1>';
+
+
+            echo Breadcrumbs::widget(
+                [
+                    'links' => isset($this->params['breadcrumbs']) ? $this->params['breadcrumbs'] : [],
+                ]
+            );
+            echo '</section>';
+
+        }
+    ?>
+
+    <section class="content course-view">
+        <?= Alert::widget() ?>
+        <?= $content ?>
+    </section>
+</div>
+
+<footer class="main-footer">
+    <div class="pull-right hidden-xs">
+        <b>Version</b> 0.1
+    </div>
+    <strong>Copyright &copy; <?= date('Y')-1 ?>-<?= date('Y') ?> <a href="http://ktree.com"><?= Yii::$app->name; ?></a>.</strong> All 
+</footer>
+
+<!-- Add the sidebar's background. This div must be placed
+     immediately after the control sidebar -->
+<div class='control-sidebar-bg'></div>
